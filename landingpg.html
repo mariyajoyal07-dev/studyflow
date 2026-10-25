@@ -243,8 +243,55 @@ footer.site-footer{background:#0A2540;color:rgba(255,255,255,0.6);text-align:cen
 <script>
 (function(){
   const DATA = HUB_DATA;
-  const COURSES = DATA.allCourses;
+  let COURSES = DATA.allCourses;
   const ACC = DATA.accreditations;
+  
+  const PROSKILLS_API = "https://script.google.com/macros/s/AKfycbwqCTI09e801lnf25nhDU5ghmnQ_cv91dr63jT2HJOqAU1Gu6fMnq5cDGTXaFdg6MYEaw/exec";
+
+let courseDatabaseReady = false;
+
+function loadProSkillsDatabase() {
+  const callbackName = "proSkillsCourses_" + Date.now();
+  const script = document.createElement("script");
+
+  window[callbackName] = function(data) {
+    try {
+      if (!data || !data.success || !Array.isArray(data.allCourses)) {
+        throw new Error("Unexpected database response");
+      }
+
+      COURSES = data.allCourses;
+      courseDatabaseReady = true;
+
+      console.log(
+        "ProSkills database connected:",
+        data.total,
+        "courses across",
+        data.providers.length,
+        "tabs"
+      );
+
+    } catch (error) {
+      console.error("Unable to load ProSkills courses:", error);
+    } finally {
+      delete window[callbackName];
+      script.remove();
+    }
+  };
+
+  script.onerror = function() {
+    delete window[callbackName];
+    script.remove();
+    console.error("Could not connect to the ProSkills database.");
+  };
+
+  script.src = PROSKILLS_API +
+    "?callback=" + encodeURIComponent(callbackName);
+
+  document.head.appendChild(script);
+}
+
+loadProSkillsDatabase();
 
   const DURATION_LABELS = {
     lt6: "Less than 6 months", "6mo": "6 months", "1yr": "1 year",
